@@ -11,9 +11,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net5.0-windows</TargetFrameworks>
-    <TargetFrameworks Condition="'$(VisualStudioVersion)'=='17.0'">$(TargetFrameworks);net6.0-windows</TargetFrameworks>
-    <TargetFrameworks Condition="'$(NETCoreAppMaximumVersion)'=='7.0'">$(TargetFrameworks);net7.0-windows</TargetFrameworks>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+<!--    <TargetFrameworks>netcoreapp3.1;net5.0-windows</TargetFrameworks> -->
+<!--    <TargetFrameworks Condition="'$(VisualStudioVersion)'=='17.0'">$(TargetFrameworks);net6.0-windows</TargetFrameworks> -->
+<!--    <TargetFrameworks Condition="'$(NETCoreAppMaximumVersion)'=='7.0'">$(TargetFrameworks);net7.0-windows</TargetFrameworks> -->
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>CefSharp.MinimalExample.WinForms</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -82,6 +83,7 @@
 
   <ItemGroup>
     <PackageReference Include="CefSharp.WinForms.NetCore" Version="121.3.70" />
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.2428" />
   </ItemGroup>
 
   <ItemGroup>

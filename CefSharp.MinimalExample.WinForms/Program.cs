@@ -3,9 +3,13 @@
 // Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 
 using CefSharp.WinForms;
+using Moverio_Windows_App;
 using System;
 using System.IO;
+using System.Numerics;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Windows.Devices.Sensors;
 
 namespace CefSharp.MinimalExample.WinForms
 {
@@ -36,6 +40,10 @@ namespace CefSharp.MinimalExample.WinForms
             settings.CefCommandLineArgs.Add("use-fake-ui-for-media-stream");
             //For screen sharing add (see https://bitbucket.org/chromiumembedded/cef/issues/2582/allow-run-time-handling-of-media-access#comment-58677180)
             settings.CefCommandLineArgs.Add("enable-usermedia-screen-capturing");
+
+            // Allow loading local files
+            settings.CefCommandLineArgs.Add("disable-web-security", "1");
+            settings.CefCommandLineArgs.Add("allow-file-access-from-files", "1");
 
             //Perform dependency check to make sure all relevant resources are in our output directory.
             var initialized = Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);

@@ -5,9 +5,13 @@
 using CefSharp.DevTools.IO;
 using CefSharp.MinimalExample.WinForms.Controls;
 using CefSharp.WinForms;
+using Moverio_Windows_App;
 using System;
 using System.Net;
+using System.Numerics;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Windows.Devices.Sensors;
 
 namespace CefSharp.MinimalExample.WinForms
 {
@@ -21,6 +25,19 @@ namespace CefSharp.MinimalExample.WinForms
         private readonly string title = "CefSharp.MinimalExample.WinForms (" + Build + ")";
         private readonly ChromiumWebBrowser browser;
 
+        private static readonly AggregatedDeviceOrientationWatcher watcher = new AggregatedDeviceOrientationWatcher();
+        private static OrientationSensor sensor;
+
+        // Euler angles in degrees, convert Euler angles to radians
+        static float radX = DegreesToRadians(-90.0f);
+        static float radY = DegreesToRadians(0.0f);
+        static float radZ = DegreesToRadians(-90.0f);
+
+        // Create quaternion from Euler angles
+        static Quaternion rotation = Quaternion.CreateFromYawPitchRoll(radY, radX, radZ);
+
+        private static ChromiumWebBrowser TargetWebBrowser = null;
+
         public BrowserForm()
         {
             InitializeComponent();
@@ -28,8 +45,16 @@ namespace CefSharp.MinimalExample.WinForms
             Text = title;
             WindowState = FormWindowState.Maximized;
 
-            browser = new ChromiumWebBrowser("www.google.com");
+            browser = new ChromiumWebBrowser()
+            {
+                Dock = DockStyle.Fill // Ensure the browser fills the form
+            };// "www.google.com");
             toolStripContainer.ContentPanel.Controls.Add(browser);
+
+            // Load local HTML file
+            //string filePath = "file://" + Application.StartupPath + @"\html\index.html";
+            string filePath = "file:///D:/dev/web_files/index.html";
+            browser.Load(filePath);
 
             browser.IsBrowserInitializedChanged += OnIsBrowserInitializedChanged;
             browser.LoadingStateChanged += OnLoadingStateChanged;
@@ -38,6 +63,18 @@ namespace CefSharp.MinimalExample.WinForms
             browser.TitleChanged += OnBrowserTitleChanged;
             browser.AddressChanged += OnBrowserAddressChanged;
             browser.LoadError += OnBrowserLoadError;
+            browser.Disposed += Browser_Disposed;
+
+            //Wait for the MainFrame to finish loading
+            browser.FrameLoadEnd += (sender, args) =>
+            {
+                //Wait for the MainFrame to finish loading
+                //if (args.Frame.IsMain)
+                //{
+                //    args.Frame.ExecuteJavaScriptAsync("alert('MainFrame finished loading');");
+                //}
+                TargetWebBrowser = browser;
+            };
 
             var version = string.Format("Chromium: {0}, CEF: {1}, CefSharp: {2}",
                Cef.ChromiumVersion, Cef.CefVersion, Cef.CefSharpVersion);
@@ -54,6 +91,34 @@ namespace CefSharp.MinimalExample.WinForms
 #endif
 
             DisplayOutput(string.Format("{0}, {1}", version, environment));
+        }
+
+        private void Browser_Disposed(object sender, EventArgs e)
+        {
+            // TargetWebBrowser = null;
+            // CleanupDeviceWatcher();
+        }
+
+        private void InitializeDeviceWatcher()
+        {
+            try
+            {
+                watcher.Add += Watcher_AddAsync;
+                watcher.Remove += Watcher_Remove;
+                watcher.Start();
+            }
+            catch (Exception ex)
+            {
+                String s = ex.Message;
+                CleanupDeviceWatcher();
+            }
+        }
+
+        private void CleanupDeviceWatcher()
+        {
+            watcher.Stop();
+            watcher.Add -= Watcher_AddAsync;
+            watcher.Remove -= Watcher_Remove;
         }
 
         private void OnBrowserLoadError(object sender, LoadErrorEventArgs e)
@@ -76,6 +141,8 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void OnIsBrowserInitializedChanged(object sender, EventArgs e)
         {
+            InitializeDeviceWatcher();
+
             var b = ((ChromiumWebBrowser)sender);
 
             this.InvokeOnUiThreadIfRequired(() => b.Focus());
@@ -156,6 +223,9 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void ExitMenuItemClick(object sender, EventArgs e)
         {
+            TargetWebBrowser = null;
+            CleanupDeviceWatcher();
+
             browser.Dispose();
             Cef.Shutdown();
             Close();
@@ -251,6 +321,67 @@ namespace CefSharp.MinimalExample.WinForms
         private void ShowDevToolsMenuItemClick(object sender, EventArgs e)
         {
             browser.ShowDevTools();
+        }
+
+        private static async void Watcher_AddAsync(object sender, string deviceId)
+        {
+            await EnableAsync(deviceId).ConfigureAwait(false);
+        }
+
+        private static void Watcher_Remove(object sender, string deviceId)
+        {
+            Disable();
+        }
+
+        private static async Task EnableAsync(string deviceId)
+        {
+            if (sensor != null)
+            {
+                Disable();
+            }
+
+            sensor = await OrientationSensor.FromIdAsync(deviceId);
+            sensor.ReadingChanged += Sensor_ReadingChangedAsync;
+        }
+
+        private static void Disable()
+        {
+            if (sensor == null)
+            {
+                return;
+            }
+
+            sensor.ReadingChanged -= Sensor_ReadingChangedAsync;
+            sensor = null;
+        }
+
+        private static void Sensor_ReadingChangedAsync(OrientationSensor sender, OrientationSensorReadingChangedEventArgs args)
+        {
+            // Your original quaternion to rotate
+            // This is an example, replace with your actual quaternion
+            Quaternion readingQuaternion = new Quaternion(args.Reading.Quaternion.X, args.Reading.Quaternion.Y, args.Reading.Quaternion.Z, args.Reading.Quaternion.W);
+
+            // Rotate the original quaternion by the rotation quaternion
+            Quaternion rotatedQuaternion = Quaternion.Multiply(rotation, readingQuaternion);
+
+            // Normalize the resulting quaternion
+            // rotatedQuaternion = Quaternion.Normalize(rotatedQuaternion);
+
+            if (TargetWebBrowser != null)
+            {
+                // Format: {type:"MWXR",c:"<command>", p:{"x":0,"y":0,"z":0,"w":0}}. where command can be: 1: Reset position (sensor covered) 
+                String message = String.Format("{{\"x\":{0},\"y\":{1},\"z\":{2},\"w\":{3}}}", rotatedQuaternion.X, rotatedQuaternion.Y, rotatedQuaternion.Z, rotatedQuaternion.W);
+                String scriptText = "window.postMessage({\"type\":\"MWXR\",\"q\":" + message + "}, '*');";
+                TargetWebBrowser.ExecuteScriptAsync(scriptText);
+            }
+
+            // WriteMessage(Console.OpenStandardOutput(), String.Format("{{\"x\":{0},\"y\":{1},\"z\":{2},\"w\":{3}}}", rotatedQuaternion.X, rotatedQuaternion.Y, rotatedQuaternion.Z, rotatedQuaternion.W));
+        }
+
+
+        private static float DegreesToRadians(float degrees)
+        {
+            return (float)(degrees * Math.PI / 180.0);
         }
     }
 }
