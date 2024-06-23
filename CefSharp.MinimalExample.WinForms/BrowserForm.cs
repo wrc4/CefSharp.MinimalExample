@@ -49,6 +49,7 @@ namespace CefSharp.MinimalExample.WinForms
             {
                 Dock = DockStyle.Fill // Ensure the browser fills the form
             };// "www.google.com");
+            browser.KeyboardHandler = new MyKeyboardHandler(this);
             toolStripContainer.ContentPanel.Controls.Add(browser);
 
             // Load local HTML file
@@ -92,11 +93,7 @@ namespace CefSharp.MinimalExample.WinForms
 
             DisplayOutput(string.Format("{0}, {1}", version, environment));
 
-            // Set the form to fullscreen
-            this.FormBorderStyle = FormBorderStyle.None; // Remove any border
-            this.WindowState = FormWindowState.Maximized; // Maximize the window
-            this.TopMost = true; // Ensure the form stays on top
-            this.Bounds = Screen.PrimaryScreen.Bounds; // Cover the entire screen
+            GoFullScreen();
         }
 
         private void Browser_Disposed(object sender, EventArgs e)
@@ -142,7 +139,7 @@ namespace CefSharp.MinimalExample.WinForms
             _ = e.Browser.SetMainFrameDocumentContentAsync(errorHtml);
 
             //AddressChanged isn't called for failed Urls so we need to manually update the Url TextBox
-            this.InvokeOnUiThreadIfRequired(() => urlTextBox.Text = e.FailedUrl);
+            //this.InvokeOnUiThreadIfRequired(() => urlTextBox.Text = e.FailedUrl);
         }
 
         private void OnIsBrowserInitializedChanged(object sender, EventArgs e)
@@ -179,27 +176,27 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void OnBrowserAddressChanged(object sender, AddressChangedEventArgs args)
         {
-            this.InvokeOnUiThreadIfRequired(() => urlTextBox.Text = args.Address);
+            //this.InvokeOnUiThreadIfRequired(() => urlTextBox.Text = args.Address);
         }
 
         private void SetCanGoBack(bool canGoBack)
         {
-            this.InvokeOnUiThreadIfRequired(() => backButton.Enabled = canGoBack);
+            //this.InvokeOnUiThreadIfRequired(() => backButton.Enabled = canGoBack);
         }
 
         private void SetCanGoForward(bool canGoForward)
         {
-            this.InvokeOnUiThreadIfRequired(() => forwardButton.Enabled = canGoForward);
+            //this.InvokeOnUiThreadIfRequired(() => forwardButton.Enabled = canGoForward);
         }
 
         private void SetIsLoading(bool isLoading)
         {
-            goButton.Text = isLoading ?
-                "Stop" :
-                "Go";
-            goButton.Image = isLoading ?
-                Properties.Resources.nav_plain_red :
-                Properties.Resources.nav_plain_green;
+            //goButton.Text = isLoading ?
+            //    "Stop" :
+            //    "Go";
+            //goButton.Image = isLoading ?
+            //    Properties.Resources.nav_plain_red :
+            //    Properties.Resources.nav_plain_green;
 
             HandleToolStripLayout();
         }
@@ -216,6 +213,7 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void HandleToolStripLayout()
         {
+            /*
             var width = toolStrip1.Width;
             foreach (ToolStripItem item in toolStrip1.Items)
             {
@@ -224,7 +222,7 @@ namespace CefSharp.MinimalExample.WinForms
                     width -= item.Width - item.Margin.Horizontal;
                 }
             }
-            urlTextBox.Width = Math.Max(0, width - urlTextBox.Margin.Horizontal - 18);
+            urlTextBox.Width = Math.Max(0, width - urlTextBox.Margin.Horizontal - 18);*/
         }
 
         private void ExitMenuItemClick(object sender, EventArgs e)
@@ -239,7 +237,7 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void GoButtonClick(object sender, EventArgs e)
         {
-            LoadUrl(urlTextBox.Text);
+            //LoadUrl(urlTextBox.Text);
         }
 
         private void BackButtonClick(object sender, EventArgs e)
@@ -254,12 +252,13 @@ namespace CefSharp.MinimalExample.WinForms
 
         private void UrlTextBoxKeyUp(object sender, KeyEventArgs e)
         {
+            /*
             if (e.KeyCode != Keys.Enter)
             {
                 return;
             }
 
-            LoadUrl(urlTextBox.Text);
+            LoadUrl(urlTextBox.Text);*/
         }
 
         private void LoadUrl(string urlString)
@@ -329,6 +328,36 @@ namespace CefSharp.MinimalExample.WinForms
             browser.ShowDevTools();
         }
 
+        public void ToggleFullScreen()
+        {
+            if (this.FormBorderStyle == FormBorderStyle.None)
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    // Switch to windowed mode
+                    this.FormBorderStyle = FormBorderStyle.Sizable;
+                    this.WindowState = FormWindowState.Normal;
+                    this.TopMost = false;
+                });
+            }
+            else
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    GoFullScreen();
+                });
+            }
+        }
+
+        private void GoFullScreen()
+        {
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+            this.TopMost = true;
+            this.Bounds = Screen.PrimaryScreen.Bounds;
+        }
+
+        #region MoverioWatcher
         private static async void Watcher_AddAsync(object sender, string deviceId)
         {
             await EnableAsync(deviceId).ConfigureAwait(false);
@@ -389,5 +418,7 @@ namespace CefSharp.MinimalExample.WinForms
         {
             return (float)(degrees * Math.PI / 180.0);
         }
+        #endregion
+
     }
 }
