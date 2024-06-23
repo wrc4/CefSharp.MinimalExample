@@ -53,7 +53,7 @@ namespace CefSharp.MinimalExample.WinForms
 
             // Load local HTML file
             //string filePath = "file://" + Application.StartupPath + @"\html\index.html";
-            string filePath = "file:///D:/dev/web_files/index.html";
+            string filePath = "file:///D:/dev/MWXR_sample/index.html";
             browser.Load(filePath);
 
             browser.IsBrowserInitializedChanged += OnIsBrowserInitializedChanged;
@@ -91,6 +91,12 @@ namespace CefSharp.MinimalExample.WinForms
 #endif
 
             DisplayOutput(string.Format("{0}, {1}", version, environment));
+
+            // Set the form to fullscreen
+            this.FormBorderStyle = FormBorderStyle.None; // Remove any border
+            this.WindowState = FormWindowState.Maximized; // Maximize the window
+            this.TopMost = true; // Ensure the form stays on top
+            this.Bounds = Screen.PrimaryScreen.Bounds; // Cover the entire screen
         }
 
         private void Browser_Disposed(object sender, EventArgs e)
