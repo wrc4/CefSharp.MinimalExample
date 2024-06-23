@@ -7,8 +7,10 @@ using CefSharp.MinimalExample.WinForms.Controls;
 using CefSharp.WinForms;
 using Moverio_Windows_App;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Sensors;
@@ -92,6 +94,16 @@ namespace CefSharp.MinimalExample.WinForms
 #endif
 
             DisplayOutput(string.Format("{0}, {1}", version, environment));
+
+            List<DeviceInfo> detectedDevices = DeviceInfo.getDetectedDevices();
+            foreach (DeviceInfo deviceInfo in detectedDevices)
+            {
+                DeviceController deviceController = new DeviceController();
+                deviceController.Init(deviceInfo);
+                deviceController.Set2D3D(CommandInfo.VAL_3D);
+                Thread.Sleep(500);
+                deviceController.Destroy();
+            }
 
             GoFullScreen();
         }
