@@ -338,6 +338,7 @@ namespace CefSharp.MinimalExample.WinForms
                     this.FormBorderStyle = FormBorderStyle.Sizable;
                     this.WindowState = FormWindowState.Normal;
                     this.TopMost = false;
+                    this.menuStrip1.Show();
                 });
             }
             else
@@ -355,6 +356,9 @@ namespace CefSharp.MinimalExample.WinForms
             this.WindowState = FormWindowState.Maximized;
             this.TopMost = true;
             this.Bounds = Screen.PrimaryScreen.Bounds;
+            this.menuStrip1.Hide();
+            this.outputLabel.Hide();
+            this.statusLabel.Hide();
         }
 
         #region MoverioWatcher
